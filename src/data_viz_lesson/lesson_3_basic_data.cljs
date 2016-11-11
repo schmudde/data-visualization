@@ -62,7 +62,9 @@
 ;; Parse Data      ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
-(defn largest-number [data largest-num]
+(defn largest-number
+  "I find the largest number in the dataset provided"
+  [data largest-num]
   (let [data-row (rest (first data)) ; rest removes the row's heading
         rows-largest-num (apply max data-row)
         remaining-rows (rest data)
