@@ -53,10 +53,13 @@
   (csv->vector sales-data))
 
 (def canvas-size
-  {:x 1000 :y 500
-   :margin-x-footer 20 :margin-x-header 10
+  (let [y 500
+        x-footer 20
+        x-header 10]
+  {:x 1000 :y y
+   :margin-x-footer x-footer :margin-x-header x-header
    :x-offset 50 :margin-y-header 10
-   :y-available (- (canvas-size :y) (canvas-size :margin-x-footer) (canvas-size :margin-x-header))})
+   :y-available (- y x-footer x-header)}))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Parse Data      ;;
@@ -107,27 +110,39 @@
 ;; Draw Data       ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
+(defn grapher!
+  ([x y label]
+   (q/fill 0)
+   (q/text-size 15)
+   (q/text-font (q/create-font "Sans-Serif" 10)) ; should I use load-font?
+   (q/text label x y))
+
+  ([x y size color]
+   (q/fill (color :r) (color :g) (color :b))
+   (q/ellipse x y size size)))
+
+(defn draw-axis-header-values [data x y x-offset y-offset]
+  (if (seq data)
+    (do
+      (grapher! x y (first data))
+      (draw-axis-header-values (rest data) (+ x x-offset) (+ y y-offset) x-offset y-offset))))
+
+(defn draw-axis-headers
+  "I take the data and destructure it in preparation for a recursive graphing function.
+   Before I do that, I determine whether I am drawing an x header or a y header and position the text accordingly."
+  [data]
+  (if (= (data :x-offset) 0)
+    (q/text-align :left :baseline)
+    (q/text-align :center :baseline))
+  (draw-axis-header-values (data :units) (data :x) (data :y) (data :x-offset) (data :y-offset)))
+
 (defn draw-data-points [data x x-offset y-offset color largest-num]
   (if (seq data)
     (let [y-scaled (ratio-scale (canvas-size :y-available) largest-num (first data))
           y (- y-offset y-scaled)
           size 10]
-      (q/fill (color :r) (color :g) (color :b))
-      (q/ellipse x y size size)
+      (grapher! x y size color)
       (draw-data-points (rest data) (+ x x-offset) x-offset y-offset color largest-num))))
-
-(defn draw-axis-header-values [data x y x-offset y-offset]
-  (if (seq data)
-    (do
-      (q/text (first data) x y)
-      (draw-axis-header-values (rest data) (+ x x-offset) (+ y y-offset) x-offset y-offset))))
-
-(defn draw-axis-headers [data]
-      (q/fill 0)
-      (q/text-size 15)
-      (q/text-align :left :baseline)
-      (q/text-font (q/create-font "Sans-Serif" 10)) ; should I use load-font?
-      (draw-axis-header-values (data :units) (data :x) (data :y) (data :x-offset) (data :y-offset)))
 
 (defn draw []
   (let [frame (q/frame-count)
@@ -140,8 +155,10 @@
         x-axis-margin (x-header :x-offset)]
 
     (q/background 255)
+
     (draw-axis-headers (x-header-data))
     (draw-axis-headers (y-header-data))
+
     (draw-data-points (commodore :units)
         (commodore :x) (commodore :x-offset) (commodore :y-offset) commodore-color largest-num)
     (draw-data-points (apple :units) (apple :x) (apple :x-offset) (apple :y-offset) apple-color largest-num)))
