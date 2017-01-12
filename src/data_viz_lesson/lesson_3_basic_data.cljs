@@ -54,12 +54,18 @@
 
 (def canvas-size
   (let [y 500
-        x-footer 20
-        x-header 10]
-  {:x 1000 :y y
-   :margin-x-footer x-footer :margin-x-header x-header
-   :x-offset 50 :margin-y-header 10
-   :y-available (- y x-footer x-header)}))
+        x 1000
+        x-axis-footer 30
+        x-axis-header 10
+        x-space-between 50
+        y-axis-margin 10]
+    {:y y
+     :x x
+     :margin-x-footer x-axis-footer
+     :margin-x-header x-axis-header
+     :x-spacer x-space-between
+     :margin-y-left-col y-axis-margin
+     :y-available (- y x-axis-footer x-axis-header)}))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Parse Data      ;;
@@ -83,27 +89,27 @@
 
 (defn x-header-data []
   {:units (map first (csv->vector sales-data))
-   :x (+ (canvas-size :x-offset) (canvas-size :margin-y-header))
-   :y (- (canvas-size :y) (/ (canvas-size :margin-y-header) 2))
-   :x-offset (canvas-size :x-offset)
+   :x (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
+   :y (canvas-size :y)
+   :x-offset (canvas-size :x-spacer)
    :y-offset 0})
 
 (defn y-header-data []
   (let [largest-num (largest-number (units-sold) 0)
         y-axis-units (range 0 (inc largest-num) (/ largest-num 10))
-        number-of-units (count y-axis-units)]
+        y-offset (- (/ (canvas-size :y-available) 10))]
     {:units y-axis-units
      :x 0
-     :y (canvas-size :y-available)
+     :y (- (canvas-size :y) (canvas-size :margin-x-footer))
      :x-offset 0
-     :y-offset (- (/ (canvas-size :y) number-of-units))}))
+     :y-offset y-offset}))
 
 (defn point-data [model-number]
   (let [model (map #(nth % model-number) data-vector)]
     {:units (map cljs.reader/read-string model)
-     :x (+ (canvas-size :x-offset) (canvas-size :margin-y-header))
+     :x (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
      :y nil
-     :x-offset (canvas-size :x-offset)
+     :x-offset (canvas-size :x-spacer)
      :y-offset (- (canvas-size :y) (canvas-size :margin-x-footer))}))
 
 ;;;;;;;;;;;;;;;;;;;;;
@@ -113,8 +119,6 @@
 (defn grapher!
   ([x y label]
    (q/fill 0)
-   (q/text-size 15)
-   (q/text-font (q/create-font "Sans-Serif" 10)) ; should I use load-font?
    (q/text label x y))
 
   ([x y size color]
@@ -132,7 +136,7 @@
    Before I do that, I determine whether I am drawing an x header or a y header and position the text accordingly."
   [data]
   (if (= (data :x-offset) 0)
-    (q/text-align :left :baseline)
+    (q/text-align :left :center)
     (q/text-align :center :baseline))
   (draw-axis-header-values (data :units) (data :x) (data :y) (data :x-offset) (data :y-offset)))
 
@@ -143,6 +147,9 @@
           size 10]
       (grapher! x y size color)
       (draw-data-points (rest data) (+ x x-offset) x-offset y-offset color largest-num))))
+
+(defn setup []
+  (q/text-font (q/create-font "sans-serif" 10)))
 
 (defn draw []
   (let [frame (q/frame-count)
@@ -165,6 +172,6 @@
 
 (q/defsketch visual-data
   :host "shape-space"
-  ;:features [:no-start]
+  :setup setup
   :draw draw
   :size [(canvas-size :x) (canvas-size :y)])
