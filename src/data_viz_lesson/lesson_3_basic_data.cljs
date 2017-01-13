@@ -125,11 +125,7 @@
    (q/ellipse x y size size)))
 
 (defn draw-axis-header-values [data]
-  (let [{units :units
-         x :x
-         y :y
-         x-offset :x-offset
-         y-offset :y-offset} data
+  (let [{:keys [units x y x-offset y-offset]} data
         next-data {:units (rest units)
                    :x (+ x x-offset)
                    :y (+ y y-offset)
