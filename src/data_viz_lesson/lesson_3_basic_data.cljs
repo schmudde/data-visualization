@@ -124,7 +124,12 @@
    (q/fill (color :r) (color :g) (color :b))
    (q/ellipse x y size size)))
 
-(defn draw-axis-header-values [data]
+(defn text-align! [x-axis-offset]
+  (if (zero? x-axis-offset)
+    (q/text-align :left :center)
+    (q/text-align :center :baseline)))
+
+(defn draw-axis-headers [data]
   (let [{:keys [units x y x-offset y-offset]} data
         next-data {:units (rest units)
                    :x (+ x x-offset)
@@ -132,26 +137,23 @@
                    :x-offset x-offset
                    :y-offset y-offset}]
     (when (seq units)
+      (text-align! x-offset)
       (grapher! x y (first units))
-      (draw-axis-header-values next-data))))
+      (draw-axis-headers next-data))))
 
-(defn draw-axis-headers
-  "I take the data and destructure it in preparation for a recursive graphing function.
-   Before I do that, I determine whether I am drawing an x header or a y header and position the text accordingly."
-  [data]
-  (if (zero? (data :x-offset))
-    (q/text-align :left :center)
-    (q/text-align :center :baseline))
-  (draw-axis-header-values data))
+(defn draw-data-points [data color largest-num]
+  (let [{:keys [units x x-offset y-offset]} data
+        next-data {:units (rest units)
+                   :x (+ x x-offset)
+                   :x-offset x-offset
+                   :y-offset y-offset}
+        y-scaled (ratio-scale (canvas-size :y-available) largest-num (first units))
+        y (- y-offset y-scaled)
+        size 10]
 
-(defn draw-data-points [data x x-offset y-offset color largest-num]
-  (if (seq data)
-    (let [y-scaled (ratio-scale (canvas-size :y-available) largest-num (first data))
-          y (- y-offset y-scaled)
-          size 10]
+    (when (seq units)
       (grapher! x y size color)
-      (draw-data-points (rest data) (+ x x-offset) x-offset y-offset color largest-num))))
-
+      (draw-data-points next-data color largest-num))))
 
 (defn draw-data [largest-num]
   (let [commodore (point-data 1)
@@ -159,9 +161,12 @@
         commodore-color {:r 255 :g 255 :b 0}
         apple-color {:r 255 :g 0 :b 255}]
 
-   (draw-data-points (commodore :units) (commodore :x) (commodore :x-offset) (commodore :y-offset) commodore-color largest-num)
-   (draw-data-points (apple :units) (apple :x) (apple :x-offset) (apple :y-offset) apple-color largest-num)))
+    ;; (map #(tempers %1 %2) [1 2 3 4] [2 3 4])
+    ;; map #(draw-data-points %1 %2 largest-num) commodore commodore-color)
 
+   (draw-data-points commodore commodore-color largest-num)
+   (draw-data-points apple apple-color largest-num)
+   ))
 
 (defn setup []
   (q/text-font (q/create-font "sans-serif" 10)))
@@ -174,9 +179,7 @@
     (draw-axis-headers (x-header-data))
     (draw-axis-headers (y-header-data largest-num))
 
-    (draw-data largest-num)
-
-    ))
+    (draw-data largest-num)))
 
 (q/defsketch visual-data
   :host "shape-space"
