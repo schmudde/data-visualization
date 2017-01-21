@@ -52,6 +52,10 @@
 (def data-vector
   (csv->vector sales-data))
 
+(def colors
+  '({:r 255 :g 255 :b 0}
+    {:r 255 :g 0 :b 255}))
+
 (def canvas-size
   (let [y 500
         x 1000
@@ -157,16 +161,10 @@
 
 (defn draw-data [largest-num]
   (let [commodore (point-data 1)
-        apple (point-data 2)
-        commodore-color {:r 255 :g 255 :b 0}
-        apple-color {:r 255 :g 0 :b 255}]
+        apple (point-data 2)]
 
-    ;; (map #(tempers %1 %2) [1 2 3 4] [2 3 4])
-    ;; map #(draw-data-points %1 %2 largest-num) commodore commodore-color)
-
-   (draw-data-points commodore commodore-color largest-num)
-   (draw-data-points apple apple-color largest-num)
-   ))
+    (dorun
+     (map #(draw-data-points %1 %2 largest-num) [commodore apple] colors))))
 
 (defn setup []
   (q/text-font (q/create-font "sans-serif" 10)))
