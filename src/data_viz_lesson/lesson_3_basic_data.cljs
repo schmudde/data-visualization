@@ -91,29 +91,31 @@
   (let [chart-data (-> sales-data (csv->vector) (strings->num-vector))]
     chart-data))
 
-(defn x-header-data []
-  {:units (map first (csv->vector sales-data))
-   :x (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
-   :y (canvas-size :y)
-   :x-offset (canvas-size :x-spacer)
-   :y-offset 0})
+;; camel case as in: [The Clojure Style Guide](https://github.com/bbatsov/clojure-style-guide)
+(defrecord GraphData [units x y x-offset y-offset])
 
-(defn y-header-data [largest-num]
+(defn x-header [] (->GraphData (map first (csv->vector sales-data))
+                               (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
+                               (canvas-size :y)
+                               (canvas-size :x-spacer)
+                               0))
+
+(defn y-header [largest-num]
   (let [y-axis-units (range 0 (inc largest-num) (/ largest-num 10))
         y-offset (- (/ (canvas-size :y-available) 10))]
-    {:units y-axis-units
-     :x 0
-     :y (- (canvas-size :y) (canvas-size :margin-x-footer))
-     :x-offset 0
-     :y-offset y-offset}))
+    (->GraphData y-axis-units
+                 0
+                 (- (canvas-size :y) (canvas-size :margin-x-footer))
+                 0
+                 y-offset)))
 
-(defn point-data [model-number]
+(defn data-points [model-number]
   (let [model (map #(nth % model-number) data-vector)]
-    {:units (map cljs.reader/read-string model)
-     :x (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
-     :y nil
-     :x-offset (canvas-size :x-spacer)
-     :y-offset (- (canvas-size :y) (canvas-size :margin-x-footer))}))
+    (->GraphData (map cljs.reader/read-string model)
+                 (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
+                 nil
+                 (canvas-size :x-spacer)
+                 (- (canvas-size :y) (canvas-size :margin-x-footer)))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Draw Data       ;;
@@ -140,6 +142,7 @@
                    :y (+ y y-offset)
                    :x-offset x-offset
                    :y-offset y-offset}]
+
     (when (seq units)
       (text-align! x-offset)
       (grapher! x y (first units))
@@ -159,13 +162,6 @@
       (grapher! x y size color)
       (draw-data-points next-data color largest-num))))
 
-(defn draw-data [largest-num]
-  (let [commodore (point-data 1)
-        apple (point-data 2)]
-
-    (dorun
-     (map #(draw-data-points %1 %2 largest-num) [commodore apple] colors))))
-
 (defn setup []
   (q/text-font (q/create-font "sans-serif" 10)))
 
@@ -174,10 +170,12 @@
 
     (q/background 255)
 
-    (draw-axis-headers (x-header-data))
-    (draw-axis-headers (y-header-data largest-num))
+    (draw-axis-headers (x-header))
+    (draw-axis-headers (y-header largest-num))
 
-    (draw-data largest-num)))
+    (dorun
+     (map #(draw-data-points (data-points %1) %2 largest-num) (range 1 3) colors))))
+
 
 (q/defsketch visual-data
   :host "shape-space"
