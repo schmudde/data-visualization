@@ -1,4 +1,4 @@
-(ns data-viz-lesson.lesson-3-basic-data
+(ns data-viz-lesson.lesson-5-interactive
   (:require [quil.core :as q :include-macros true]
             [clojure.string :as str]))
 
@@ -53,8 +53,12 @@
   (csv->vector sales-data))
 
 (def colors
-  '({:r 255 :g 255 :b 0}
-    {:r 255 :g 0 :b 255}))
+  '({:r 255 :g 255 :b 255}
+    {:r 255 :g 0 :b 255}
+    {:r 255 :g 255 :b 0}
+    {:r 25 :g 0 :b 255}
+    {:r 0 :g 255 :b 255}
+    {:r 25 :g 255 :b 0}))
 
 (def canvas-size
   (let [y 500
@@ -70,6 +74,22 @@
      :x-spacer x-space-between
      :margin-y-left-col y-axis-margin
      :y-available (- y x-axis-footer x-axis-header)}))
+
+(def data-point-state (atom #{}))
+(def data-point-frame (atom [0 0 0 0 0 0]))
+
+(defn update-point-frame [x]
+  (let [updated-point-frame (assoc @data-point-frame (dec x) (q/frame-count))]
+    (reset! data-point-frame updated-point-frame)))
+
+(defn update-points! [x]
+  (if (contains? @data-point-state x)
+    ;; right now, if the thing is already in there, it swaps the frame, so the animation I write tomorrow should be a disappearing animation.
+    (do
+      (update-point-frame x)
+      (swap! data-point-state disj x))
+
+    (swap! data-point-state conj x)))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Parse Data      ;;
@@ -135,50 +155,71 @@
     (q/text-align :left :center)
     (q/text-align :center :baseline)))
 
-(defn draw-axis-headers [data]
+(defn draw-graph-info [data]
+  (let [{:keys [units x y x-offset y-offset]} data]
+    (text-align! x-offset)
+    (grapher! x y (first units))))
+
+(defn draw-data-point [data color largest-num]
   (let [{:keys [units x y x-offset y-offset]} data
-        next-data {:units (rest units)
-                   :x (+ x x-offset)
-                   :y (+ y y-offset)
-                   :x-offset x-offset
-                   :y-offset y-offset}]
-
-    (when (seq units)
-      (text-align! x-offset)
-      (grapher! x y (first units))
-      (draw-axis-headers next-data))))
-
-(defn draw-data-points [data color largest-num]
-  (let [{:keys [units x x-offset y-offset]} data
-        next-data {:units (rest units)
-                   :x (+ x x-offset)
-                   :x-offset x-offset
-                   :y-offset y-offset}
         y-scaled (ratio-scale (canvas-size :y-available) largest-num (first units))
         y (- y-offset y-scaled)
         size 10]
 
-    (when (seq units)
-      (grapher! x y size color)
-      (draw-data-points next-data color largest-num))))
+    (grapher! x y size color)))
+
+(defn next-data-set [data]
+  (let [{:keys [units x y x-offset y-offset]} data]
+    {:units (rest units)
+     :x (+ x x-offset)
+     :y (+ y y-offset)
+     :x-offset x-offset
+     :y-offset y-offset}))
+
+(defn draw-graph
+  ([data]
+   "I draw x or y axis header information"
+   (let [next-data (next-data-set data)]
+     (when (seq (:units data))
+       (draw-graph-info data)
+       (recur next-data))))
+
+  ([data color largest-num]
+   "I draw a data point with color, scaled by to the size of the graph"
+   (let [next-data (next-data-set data)]
+     (when (seq (:units data))
+       (draw-data-point data color largest-num)
+       (recur next-data color largest-num)))))
+
+(defn on-key-down
+  "Scans keycodes 49-54, which correlates 1 - 6 on the keyboard"
+  []
+  (let [keypress (q/key-code)]
+    (if (and (>= keypress 49) (<= keypress 54))
+      (-> keypress
+          (- 48)
+          (update-points!)))))
 
 (defn setup []
-  (q/text-font (q/create-font "sans-serif" 10)))
+  (q/text-font (q/create-font "sans-serif" 10))
+  (update-points! 1)
+  (update-points! 2))
 
 (defn draw []
   (let [largest-num (largest-number (units-sold) 0)]
 
     (q/background 255)
 
-    (draw-axis-headers (x-header))
-    (draw-axis-headers (y-header largest-num))
+    (draw-graph (x-header))
+    (draw-graph (y-header largest-num))
 
-    ;; (dorun
-    ;;  (map #(draw-data-points (data-points %1) %2 largest-num) (range 1 3) colors))
-    ))
+    ;; why are data-points and colros indexed differently?
+    (dorun
+     (map #(draw-graph (data-points %1) (nth colors (dec %1)) largest-num) @data-point-state))))
 
 (q/defsketch visual-data
   :host "shape-space"
   :setup setup
   :draw draw
+  :key-pressed on-key-down
   :size [(canvas-size :x) (canvas-size :y)])
