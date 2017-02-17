@@ -25,7 +25,6 @@
   [canvas-max data-max data-value]
   (/ canvas-max (/ data-max data-value)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Raw Data        ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -53,7 +52,7 @@
   (csv->vector sales-data))
 
 (def colors
-  '({:r 255 :g 255 :b 255}
+  '({:r 0 :g 0 :b 0}
     {:r 255 :g 0 :b 255}
     {:r 255 :g 255 :b 0}
     {:r 25 :g 0 :b 255}
@@ -75,21 +74,29 @@
      :margin-y-left-col y-axis-margin
      :y-available (- y x-axis-footer x-axis-header)}))
 
-(def data-point-state (atom #{}))
-(def data-point-frame (atom [0 0 0 0 0 0]))
+;;;;;;;;;;;;;;;;;;;;;
+;; State Data      ;;
+;;;;;;;;;;;;;;;;;;;;;
 
-(defn update-point-frame [x]
+(def data-point-state (atom #{}))
+(def data-point-frame (atom [nil nil nil nil nil nil]))
+
+(defn add-data-point-frame! [x]
   (let [updated-point-frame (assoc @data-point-frame (dec x) (q/frame-count))]
+    (reset! data-point-frame updated-point-frame)))
+
+(defn remove-data-point-frame! [x]
+  (let [updated-point-frame (assoc @data-point-frame (dec x) nil)]
     (reset! data-point-frame updated-point-frame)))
 
 (defn update-points! [x]
   (if (contains? @data-point-state x)
-    ;; right now, if the thing is already in there, it swaps the frame, so the animation I write tomorrow should be a disappearing animation.
     (do
-      (update-point-frame x)
+      (remove-data-point-frame! x)
       (swap! data-point-state disj x))
-
-    (swap! data-point-state conj x)))
+    (do
+      (add-data-point-frame! x)
+      (swap! data-point-state conj x))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Parse Data      ;;
@@ -160,11 +167,11 @@
     (text-align! x-offset)
     (grapher! x y (first units))))
 
-(defn draw-data-point [data color largest-num]
+(defn draw-data-point [data color largest-num size-animation]
   (let [{:keys [units x y x-offset y-offset]} data
         y-scaled (ratio-scale (canvas-size :y-available) largest-num (first units))
         y (- y-offset y-scaled)
-        size 10]
+        size (+ 10 size-animation)]
 
     (grapher! x y size color)))
 
@@ -176,6 +183,15 @@
      :x-offset x-offset
      :y-offset y-offset}))
 
+(defn size-animation-amount [stored-frame]
+  (let [max-additional-size 10
+        current-frame (q/frame-count)
+        frame-difference (- current-frame stored-frame)]
+    (if (and (<= frame-difference max-additional-size)
+             (>= frame-difference 0))
+      (- 10 frame-difference)
+      0)))
+
 (defn draw-graph
   ([data]
    "I draw x or y axis header information"
@@ -184,12 +200,12 @@
        (draw-graph-info data)
        (recur next-data))))
 
-  ([data color largest-num]
+  ([data color largest-num size-animation]
    "I draw a data point with color, scaled by to the size of the graph"
    (let [next-data (next-data-set data)]
      (when (seq (:units data))
-       (draw-data-point data color largest-num)
-       (recur next-data color largest-num)))))
+       (draw-data-point data color largest-num size-animation)
+       (recur next-data color largest-num size-animation)))))
 
 (defn on-key-down
   "Scans keycodes 49-54, which correlates 1 - 6 on the keyboard"
@@ -206,16 +222,20 @@
   (update-points! 2))
 
 (defn draw []
-  (let [largest-num (largest-number (units-sold) 0)]
+  (let [largest-num (largest-number (units-sold) 0)
+        size-animation (mapv size-animation-amount @data-point-frame)]
 
     (q/background 255)
 
     (draw-graph (x-header))
     (draw-graph (y-header largest-num))
 
-    ;; why are data-points and colros indexed differently?
     (dorun
-     (map #(draw-graph (data-points %1) (nth colors (dec %1)) largest-num) @data-point-state))))
+     (map (fn [index]
+            (let [vector-index (dec index)]
+              (draw-graph (data-points index) (nth colors vector-index) largest-num (size-animation vector-index))))
+
+          @data-point-state))))
 
 (q/defsketch visual-data
   :host "shape-space"
