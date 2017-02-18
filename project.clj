@@ -1,6 +1,6 @@
-(defproject data-viz-lesson "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
-  :url "http://example.com/FIXME"
+(defproject data-viz-lesson "1.0"
+  :description "We'll learn about data visualization!"
+  :url "http://schmud.de"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
