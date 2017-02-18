@@ -8,6 +8,5 @@
 
 (q/defsketch circle-maker
   :host "shape-space"
-;  :features [:no-start]
   :draw draw
   :size [300 300])
