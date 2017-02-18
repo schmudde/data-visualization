@@ -1,4 +1,4 @@
-(ns data-viz-lesson.lesson-5-interactive
+(ns data-viz-lesson.lesson-5-animation
   (:require [quil.core :as q :include-macros true]
             [clojure.string :as str]))
 
@@ -138,7 +138,7 @@
 
 (defn data-points [model-number]
   (let [model (map #(nth % model-number) data-vector)]
-    (->GraphData (map cljs.reader/read-string model)
+    (->GraphData (map js/parseInt model)
                  (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
                  nil
                  (canvas-size :x-spacer)

@@ -109,14 +109,6 @@
                  0
                  y-offset)))
 
-(defn data-points [model-number]
-  (let [model (map #(nth % model-number) data-vector)]
-    (->GraphData (map cljs.reader/read-string model)
-                 (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
-                 nil
-                 (canvas-size :x-spacer)
-                 (- (canvas-size :y) (canvas-size :margin-x-footer)))))
-
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Draw Data       ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -173,8 +165,6 @@
     (draw-axis-headers (x-header))
     (draw-axis-headers (y-header largest-num))
 
-    ;; (dorun
-    ;;  (map #(draw-data-points (data-points %1) %2 largest-num) (range 1 3) colors))
     ))
 
 (q/defsketch visual-data

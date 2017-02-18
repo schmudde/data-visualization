@@ -1,2 +1,37 @@
 /* some style */
 
+body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: #333;
+}
+
+#shape-space {
+    padding: 15px;
+    outline: none;
+}
+
+.menu {
+    padding: 15px;
+    width: 45%;
+    display: inline-block;
+}
+
+.apple {
+    color: rgb(255, 0, 255);
+}
+
+.mac {
+    color: rgb(200, 200, 0);
+}
+
+.atari {
+    color: rgb(25, 0, 255);
+}
+
+.trs {
+    color: rgb(0, 200, 200);
+}
+
+.amiga {
+    color: rgb(25, 200, 0);
+}

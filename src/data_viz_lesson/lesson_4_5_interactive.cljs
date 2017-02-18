@@ -53,11 +53,11 @@
   (csv->vector sales-data))
 
 (def colors
-  '({:r 255 :g 255 :b 255}
+  '({:r 0 :g 0 :b 0}
     {:r 255 :g 0 :b 255}
     {:r 255 :g 255 :b 0}
     {:r 25 :g 0 :b 255}
-    {:r 25 :g 35 :b 0}
+    {:r 0 :g 255 :b 255}
     {:r 25 :g 255 :b 0}))
 
 (def canvas-size
@@ -122,7 +122,7 @@
 
 (defn data-points [model-number]
   (let [model (map #(nth % model-number) data-vector)]
-    (->GraphData (map cljs.reader/read-string model)
+    (->GraphData (map js/parseInt model)
                  (+ (canvas-size :x-spacer) (canvas-size :margin-y-left-col))
                  nil
                  (canvas-size :x-spacer)

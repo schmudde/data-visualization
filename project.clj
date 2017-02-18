@@ -7,7 +7,7 @@
   :min-lein-version "2.7.1"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.36"]
+                 [org.clojure/clojurescript "1.9.473"]
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
                  [quil "2.4.0"]
@@ -49,7 +49,7 @@
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/data_viz_lesson.js"
                            :main data-viz-lesson.core
-                           :optimizations :advanced
+                           :optimizations :advanced ;;none
                            :pretty-print false}}]}
 
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
